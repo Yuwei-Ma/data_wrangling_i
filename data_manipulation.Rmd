@@ -1,0 +1,104 @@
+---
+title: "Data Import"
+output: github_document
+---
+Command option I to create data chunk
+
+Start loading data (reader is pt of tidyverse)
+```{r}
+library(tidyverse)
+```
+
+## Let's import a dataset
+```{r}
+litters_df = 
+  read_csv("data/FAS_litters.csv", na = c("NA",".","")) # Fix the missingness
+litters_df = 
+  janitor::clean_names(litters_df) # cleaning up the names
+
+pups_df = 
+  read_csv("data/FAS_pups.csv", skip = 3, na = c("NA",".",""))
+pups_df = 
+  janitor::clean_names(pups_df)
+
+```
+
+## `select`
+select specific variable
+```{r}
+select(litters_df, group, litter_number, gd0_weight) # after select, gives a data frame with only these variables
+```
+
+select a range
+```{r}
+select(litters_df, group:gd_of_birth)
+# keep all variables between this and this
+```
+
+select by removal
+```{r}
+select(litters_df, -group)
+select(litters_df, -(group:gd_of_birth))
+```
+
+select by prefix, keeping everything that starts with gd, and also keep group
+```{r}
+select(litters_df, group, starts_with("gd"))
+# also we have end with & contain
+```
+
+rearrange by selecting
+```{r}
+select(litters_df, starts_with("gd"), group) #rearrange the order
+select(litters_df, litter_number, everything()) # first give litter_number and then everything else
+
+relocate(litters_df, litter_number) # does the same thing with select and everything
+```
+
+rename by selecting
+```{r}
+select(litters_df, GROUP = group, everything()) # rename this variable 
+
+rename(litters_df, GROUP = group)
+```
+
+
+What if i only select one variable...?
+```{r}
+select(litters_df, group) # give me a data frame with just one variable 
+
+# Select is different with pull
+pull(litters_df, group) # gives a vector, or $, almost never use this, keep everything in data frame
+litters_df$group
+```
+
+Learning Assessment: In the pups data, select the columns containing litter number, sex, and PD ears.
+```{r}
+select(pups_df, litter_number, sex, pd_ears)
+```
+
+## `filter`
+
+use `filter()` to filter out rows
+```{r}
+filter(litters_df, gd_of_birth == 20, pups_born_alive == 16) # test if value = 20, keeps those returned true, others filtered out
+```
+
+look for more than 5 pups alive
+```{r}
+filter(litters_df, pups_born_alive > 5)
+filter(litters_df, pups_born_alive >= 5)
+filter(litters_df, pups_born_alive <= 5)
+```
+
+look for non-matches
+```{r}
+filter(litters_df, pups_born_alive != 6)
+```
+
+match to a set
+```{r}
+#suppose i want in this dataset
+filter(litters_df, group %in% c("Con7",("Con8")))
+```
+

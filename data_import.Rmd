@@ -11,40 +11,49 @@ library(readxl)
 library(haven)
 ```
 
-Let's import a dataset
+## Let's import a dataset
 (read.csv is not as good as read_csv)
 ```{r}
 litters_df = 
   read_csv("data/FAS_litters.csv") # fetal-alcohol syndrome
+# _csv means it will convert this to tibble and do other things that are helpful
+# run this in console, you'll see it gives #rows #col, these are characters these are numbers
 ```
 
-Update the names in 'litters_df
+## Look at your data!!
+```{r}
+names(litters_df)
+```
+We can see that there's space in the variable names, accessing variable that has space in it is difficult and clunkty
+
+## Update the names in 'litters_df
 ```{r}
 litters_df= 
   janitor::clean_names(litters_df) # janitor::clean_names is using this function in janitor,
-# so you don't need install entire library
+# so you don't need load entire lib/package
 ```
 
-Look at the data !!
-
+now "Litter Number" -> litter_number
 ```{r}
 litters_df
 ```
+use litters_df, show first 10 rows
+Also can use view(litters_df) in console, to see the whole dataset
 
-Also can use View(litters_df) in console
-
-Sometimes skimming data is neat!
+Sometimes skimming data is neat?
 ```{r}
-skimr::skim(litters_df)
+skimr::skim(litters_df)# high level summary, 
 ```
 
-## Fix hte 
-```{r}
+## Fix the missingness
+```{r} 
+# the person who create the data someitmes use . to indicate a missing data
 litters_df = 
   read_csv("data/FAS_litters.csv", na = c("NA",".","")) # we have actual texts like NA, changes type
 ```
+After this, we can see the column GD0 weight from 'chr' changes to 'dbl' 
 
-## Import Pups data 
+## Import Pups data, the first rows are missing, so we want to skip them
 ```{r}
 pups_df = 
   read.csv(
@@ -57,7 +66,7 @@ pups_df =
 ```
 
 ?read_csv 
-this helps you know the syntax and funcions
+this helps you know the syntax and functions
 
 # ok what about excel
 CSV is better than excel, excel always have some additional data forms, like date appears differently
