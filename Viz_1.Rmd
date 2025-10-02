@@ -1,0 +1,288 @@
+---
+title: "Visualization 1"
+output: github_document
+---
+## Explore the data and explain to others\* exploratory analysis
+* visualize to understand your data
+* where the bounds is, 
+* what are the distribution of different variables 
+* help with initially evaluating the hypotheses 
+
+## Important hotkeys
+* command option I to create data chunk
+* command+shift+m - pipe operator hotkey
+* **highlight command enter**, only highlight the middle part (without litters_df and the end bracket) so it outputs the result 
+* also can put your cursor in the chunk, **command enter**, r is gonna  run the whole chunk
+* press up to run the last piece
+* or press up to view
+ 
+Start loading data (reader is pt of tidyverse)
+```{r setup, echo = FALSE, message = FALSE}
+library(tidyverse)
+library(ggridges)
+library(p8105.datasets)
+```
+
+Import the weather data
+* weather data initially collected by NOAA, a government agency 
+* climate tries to replace a lot of functionality of the public data, or go to harvard data library
+
+```{r}
+data("weather_df")
+# precipitation value, T for temperature
+```
+
+Making first plot
+
+```{r}
+ggplot(data = weather_df, mapping = aes(x = tmin, y = tmax)) + 
+  geom_point()
+# mapping, put in an entry that's wrapped in this aes function 
+# this is the framework to tell ggplot which variables from my data do i want to mapped onto the canvas, how?
+# scatter plot, so we give it x and y values
+# specify the geom to create the graph
+
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point() # shorter version
+
+# also can use
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_point()
+```
+
+```{r}
+ggp_weather_scatterplot =
+  weather_df |> 
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_point()
+```
+
+Check that some rows are missing, according to the warning message
+```{r}
+
+weather_df |> 
+  filter(is.na(tmax))
+```
+
+* NANIAR - functionality about missingness
+
+## Fancier scatterplot
+
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax, color = name)) +
+  geom_point(alpha = 0.3) + 
+  geom_smooth(se = FALSE) # se removed because it should not be trusted
+
+# different color for each name in the data-set, variable name encoding the location
+# alpha is setting the opacity of points, 0~1
+```
+
+where u define asthetics can matter
+```{r}
+
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_point(aes(color = name), alpha = 0.3, size = 0.6) + 
+  geom_smooth(se = FALSE) # now geom_smooth is not inheriting the aes statement from geom_point
+# flexibility in defining mapping by each layer
+
+
+```
+
+if we want to change the size of the point based on the value in the data set, 
+could map the size in aes
+```{r}
+
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_point(aes(color = name, size = prcp), alpha = 0.3) + 
+  geom_smooth(se = FALSE)
+
+```
+
+Using faceting to breaking a single plot to multiple plots
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_point(aes(color = name), alpha = 0.3, size = 0.8) + 
+  geom_smooth(se = FALSE) +
+  facet_grid(. ~ name) # row for nothing, name for colmumn
+```
+
+if we want three rows:
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_point(aes(color = name), alpha = 0.3, size = 0.8) + 
+  geom_smooth(se = FALSE) +
+  facet_grid(name ~ .) # row for nothing, name for colmumn
+```
+
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax, color = name, shape = name)) +
+  geom_point(aes(size = prcp), alpha = 0.3) + 
+  geom_smooth(se = FALSE) +
+  facet_grid(. ~ name)
+```
+
+
+## Learning Assessment: Write a code chain that starts with weather_df; focuses only on Central Park, converts temperatures to Fahrenheit, makes a scatterplot of min vs. max temperature, and overlays a linear regression line (using options in geom_smooth()).
+* for data cleaning and stuff, see data_manipulation
+
+```{r}
+weather_df |> 
+  filter(name == 'CentralPark_NY') |> 
+  mutate(
+    ftmin = tmin * 1.8 + 32, 
+    ftmax = tmax * 1.8 + 32    
+    ) |> 
+  ggplot(aes(x = ftmax, y = ftmin)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = "lm") # lm -> linear regression line
+
+```
+
+## Small things
+
+```{r}
+
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax, color = name, shape = name)) +
+  #geom_point(alpha = 0.3) + 
+  geom_smooth(se = FALSE)
+
+# comment out the point so only have the line 
+```
+
+```{r}
+weather_df |> 
+  ggplot(aes(x=tmin, y = tmax)) +
+  geom_hex()
+```
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_point(color = "purple") # diff of mapping in aes and setting directly
+
+```
+
+## Univariate plots
+
+```{r}
+
+weather_df |> 
+  ggplot(aes(x = tmin)) + # make histogram, y is the count, we don't need to set
+  geom_histogram(color = "white", fill = "red") # create solid figures
+```
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmin, color = name)) +
+  geom_histogram() # default is overlay diff distributions over each other
+# a little hard to see
+```
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmin, fill = name)) +
+  geom_histogram() 
+```
+
+use facet_grid
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmin, fill = name)) +
+  geom_histogram() +
+  facet_grid(name ~ .)
+```
+
+maybe a density plot?
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmin, fill = name)) +
+  geom_density(alpha = 0.2) # a weird thing is that when you have a gap in ur data, the density plot doesn't always go down to 0, instead it fills in that middle, set alpha lower to make it better
+```
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = name, y = tmin)) +
+  geom_boxplot(aes(fill = name))
+```
+
+Violin plots: kind of like a vertical density plot that has been turned symmetric
+```{r}
+weather_df |> 
+  ggplot(aes(x = name, y = tmin, fill = name)) +
+  geom_violin()
+```
+better shows distribution than boxplot
+
+
+Ridge plot
+```{r}
+
+weather_df |> 
+  ggplot(aes(x = tmin, y = name)) +
+  geom_density_ridges()
+
+```
+
+Compare precipitation across locations
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = prcp, fill = name)) +
+  geom_histogram() +
+  facet_grid(name ~ .)
+```
+
+another try:
+```{r}
+weather_df |> 
+  ggplot(aes(x = prcp, fill = name)) +
+  geom_density(alpha = 0.2)
+```
+
+zoom in the data, cuz there's a lot of situation where there's 0 prcp, also remove the super long tail
+```{r}
+weather_df |> 
+  filter(prcp > 5, prcp < 1000) |> 
+  ggplot(aes(x = prcp, fill = name)) +
+  geom_density(alpha = 0.2)
+
+```
+
+## saving and embedding plots
+
+saving plots
+
+```{r}
+
+ggp_weather_violin = 
+  weather_df |> 
+  ggplot(aes(x = name, y = tmin, fill = name)) +
+  geom_violin()
+
+ggp_weather_violin1
+
+ggsave("plots/violin_plot.pdf", ggp_weather_violin, width = 8, height = 6) 
+# in inches
+```
+
+embedding plots
+
+
+
+
+
+
+
+

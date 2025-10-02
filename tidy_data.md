@@ -1,0 +1,201 @@
+Tidy data
+================
+
+Command option I to create data chunk
+
+Start loading data (reader is pt of tidyverse)
+
+## Rules for tidy data
+
+- columns are variables
+- rows are observations
+- every value has a call
+
+## Why tidy your data?
+
+- allow you to manipulate model using this tool that people over the
+  world have created and use
+- data written for computers is easy to work with
+- takes disparate data source, widow down to the same structure; tidy
+  data are all the same, untidy are different in different/weird ways
+- Some data aren’t really amenable to tidiness
+  - genomics
+  - neuro-imaging, single cell coded multiple info
+
+## Important hotkeys
+
+- command+shift+m - pipe operator hotkey
+- **highlight command enter**, only highlight the middle part (without
+  litters_df and the end bracket) so it outputs the result
+- also can put your cursor in the chunk, **command enter**, r is gonna
+  run the whole chunk
+- press up to run the last piece
+- or press up to view \## Start Coding now! \## Pivit longer
+
+``` r
+pulse_df = # command+shift+m - pipe operator hotkey
+  read_sas("data/public_pulse_data.sas7bdat") |> 
+  janitor::clean_names() |> 
+  pivot_longer(
+    cols = bdi_score_bl:bdi_score_12m, 
+    names_to = "visit",
+    values_to = "bdi_score", # bdi stands for bed depression score, 
+    names_prefix = "bdi_score_" # deleting the prefix
+  ) |> 
+  mutate(visit = replace(visit, visit == "bl", "00m")) |> # replacing baseline to 00m
+  relocate(id, visit)
+```
+
+View(pulse_df) \# to see demographics
+
+## One more example
+
+``` r
+litters_df = 
+  read_csv("data/FAS_litters.csv", na = c("NA",".","")) |> 
+  janitor::clean_names() |> 
+  pivot_longer(# find which column we want to make longer
+    cols = gd0_weight:gd18_weight, # now each one have two rows, one is gd0 one is gd18 other data are just reproduced
+    names_to = "gd_time",
+    values_to = "weight"
+  ) |> 
+  mutate(gd_time = case_match(
+    gd_time, 
+    "gd0_weight" ~ 0,
+    "gd18_weight" ~ 18
+  )) #since 18 and 0 are in the middle, cannot use prefix function...
+```
+
+    ## Rows: 49 Columns: 8
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (2): Group, Litter Number
+    ## dbl (6): GD0 weight, GD18 weight, GD of Birth, Pups born alive, Pups dead @ ...
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+``` r
+# other functions like case_when also works...
+```
+
+## Pivot wider
+
+``` r
+analysis_df= 
+  tibble(group= c("treatment", "treatment", "control","control"),
+         time = c("pre","post","pre","post"),
+         mean = c(4,10,4.2,5)
+         )
+```
+
+Pivot wider for human readability
+
+``` r
+analysis_df |> 
+  pivot_wider( # what are the variables that we want to create names from
+    names_from = time,
+    values_from = mean
+  ) |> 
+  knitr::kable() # create output format, a neater text image, more importantly, it produce the output in ur rmd file is a nicely formatted table
+```
+
+| group     | pre | post |
+|:----------|----:|-----:|
+| treatment | 4.0 |   10 |
+| control   | 4.2 |    5 |
+
+## Bind tables
+
+``` r
+# when we have tables with similar format, we stack tables on top of each other
+# use read_excel, pull out the data, put them in dataframe
+# first table: B3toD6
+
+# always helpful using View(fellowship_ring)
+
+fellowship_ring = 
+  read_excel("data/LotR_Words.xlsx", range = "B3:D6") |> 
+  mutate(movie = "fellowship_ring") 
+
+two_towers = 
+  read_excel("data/LotR_Words.xlsx", range = "F3:H6") |> 
+  mutate(movie = "two_towers")
+
+return_king = 
+  read_excel("data/LotR_Words.xlsx", range = "J3:L6") |> 
+  mutate(movie = "return_king")
+
+lotr_df = 
+  bind_rows(fellowship_ring, two_towers, return_king) |> #take as many datasets as you want
+  janitor::clean_names() |> 
+  pivot_longer(
+    cols = female:male,
+    names_to = "sex",
+    values_to = "words"
+  ) |> 
+  relocate(movie) |> 
+  mutate(race = str_to_lower(race))
+```
+
+## Join FAS datasets
+
+Import `litters` dataset
+
+``` r
+litters_df = 
+  read_csv("data/FAS_litters.csv", na = c("NA",".","")) |> 
+  janitor::clean_names() |> 
+  mutate(wt_gain = gd18_weight - gd0_weight) |> # non-tidyness due to excel have multiple info, col-name have both group name and group number, con/mod/...
+  separate(
+    group, into = c("dose","day_of_treatment"), sep = 3 # separate into these, by index
+  )
+```
+
+    ## Rows: 49 Columns: 8
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (2): Group, Litter Number
+    ## dbl (6): GD0 weight, GD18 weight, GD of Birth, Pups born alive, Pups dead @ ...
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+``` r
+  # if group name have different length, first we need to use case_match(), case_when
+  # cuz separate only works when there's a pattern
+```
+
+Import `pups` next!
+
+``` r
+pups_df = 
+  read_csv("data/FAS_pups.csv", skip = 3, na = c("NA",".","")) |> 
+  janitor::clean_names() |> 
+  mutate(
+    sex = case_match(
+      sex,
+      1 ~ "male",
+      2 ~ "female"
+    )
+  )
+```
+
+    ## Rows: 313 Columns: 6
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (1): Litter Number
+    ## dbl (5): Sex, PD ears, PD eyes, PD pivot, PD walk
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+Join the datasets!
+
+``` r
+# prioritize pups, keep every entry of this data-frame and add litters data-frame, use left_join
+
+fas_df = 
+  left_join(pups_df, litters_df, by = "litter_number") |> # by argument to specify what to join by
+  relocate(litter_number, dose, day_of_treatment)
+```

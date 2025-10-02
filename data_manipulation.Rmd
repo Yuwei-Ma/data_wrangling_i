@@ -102,13 +102,13 @@ match to a set
 filter(litters_df, group %in% c("Con7",("Con8")))
 ```
 
-filter out missing wows with `drop_na()`
+filter out missing rows with `drop_na()`
 Drop rows containing missing values
 ```{r}
 drop_na(litters_df)
 drop_na(litters_df, gd0_weight)
-
 ```
+
 
 
 Learning Assessment: In the pups data:
@@ -121,4 +121,103 @@ filter(pups_df, sex == 1)
 filter(pups_df, pd_walk <= 11, sex == 2)
 ```
 
+## `mutate`
+ use `mutate()` to create or modify variables. 
+```{r}
+mutate(
+  litters_df,
+  wt_gain = gd18_weight - gd0_weight,
+  group = str_to_lower(group) # update variable from uppercase to lower
+)
+```
+ 
+## `arrange` 
+
+`arrange()` arranges things
+```{r}
+arrange(litters_df, pups_born_alive)
+arrange(litters_df, group, pups_born_alive)
+arrange(litters_df, desc(pups_born_alive)) # we can put things in descending
+arrange(litters_df, desc(group), pups_born_alive) # group in desc while pups in asc
+
+arrange(litters_df, gd0_weight) # turns out arrange makes NA end up at the end
+```
+
+## PIPES
+ 
+ Let's see a bad way to do things
+```{r}
+litters_df = 
+  read_csv("data/FAS_litters.csv", na = c("NA",".",""))
+
+litters_df = 
+  janitor::clean_names(litters_df)
+
+litters_df = 
+  select(litters_df, group, litter_number, starts_with("gd"))
+
+litters_df = 
+  drop_na(litters_df)
+
+litters_df = 
+  mutate(
+    litters_df,
+    wet_gain = gd18_weight - gd0_weight
+  )
+```
+ 
+other bad ways: 
+nesting things together
+
+Use pipes to avoid all this
+```{r}
+litters_df = 
+  read_csv("data/FAS_litters.csv", na = c("NA",".","")) |> # command+shift+m - pipe operator hotkey
+  janitor::clean_names() |> 
+  select(group, litter_number, starts_with("gd")) |> 
+  drop_na() |> 
+  mutate(
+    wt_gain = gd18_weight - gd0_weight
+  )
+```
+
+## hotkey
+* **highlight command enter**, only highlight the middle part (without litters_df and the end bracket) so it outputs the result 
+* also can put your cursor in the chunk, **command enter**, r is gonna  run the whole chunk
+* press up to run the last piece
+* or press up to view
+
+
+Learning Assessment: Write a chain of commands that:
+
+loads the pups data
+cleans the variable names
+filters the data to include only pups with sex 1
+removes the PD ears variable
+creates a variable that indicates whether PD pivot is 7 or more days
+```{r}
+pups_df = (
+  read_csv("data/FAS_pups.csv", skip = 3, na = c("NA",".","")) |> 
+    janitor::clean_names() |> 
+    filter(sex == 1) |> 
+    select(-pd_ears) |> 
+    mutate(pd_pivot_over_7  = pd_pivot >= 7)
+)
+```
+
+write a line, run it, write a line, run it
+
+## tidyverse assumes data comes first
+
+If we do:
+```{r}
+litters_df |> 
+  lm(wt_gain ~ gd_of_birth)
+```
+error: cannot coerce class ‘"formula"’ to a data.frame
+
+```{r}
+litters_df |> 
+  lm(wt_gain ~ gd_of_birth, data = _)
+```
 
